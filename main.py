@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from langchain_openai import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.chains import ConversationChain
 import mysql.connector
@@ -12,7 +11,7 @@ import json
 import unicodedata
 from difflib import get_close_matches
 from typing import Optional
-# import os
+import os
 
 # FastAPI setup
 app = FastAPI()
@@ -26,15 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-<<<<<<< HEAD
-db_config = { 
-    'host': 'srv1836.hstgr.io',
-    'user': 'u258460312_bniuser',
-    'password':'Sbva/tech1',
-    'database': 'u258460312_bni'
-}
 
-=======
 db_config = {
     'host': os.environ.get('DB_HOST'),
     'user': os.environ.get('DB_USER'),
@@ -43,11 +34,10 @@ db_config = {
 }
 
 
->>>>>>> caa29a39e409af362322dfe11b7f0f4c8b8bc446
-# OpenRouter / DeepSeek config
+
 openrouter_config = {
     'base_url': 'https://api.deepseek.com',
-    'api_key': 'sk-7dd2748bff6e4ffcab8a10e8133ecefc',
+    'api_key': os.environ.get('OPENROUTER_API_KEY'),
     'model': 'deepseek-chat'
 }
 
@@ -422,14 +412,10 @@ async def ask_question(data: QuestionRequest):
         "is_general_knowledge": False
     }, headers={"Content-Type": "application/json; charset=utf-8"})
 
-# Optional: Reset memory for a user
 @app.post("/reset_memory/{user_id}")
 async def reset_user_memory(user_id: int):
     if user_id in user_memory_store:
         del user_memory_store[user_id]
     return {"status": "memory_reset", "user_id": user_id}
 
-# # On startup
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="127.0.0.1", port=8000)
+
