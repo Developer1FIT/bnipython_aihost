@@ -12,7 +12,7 @@ import json
 import unicodedata
 from difflib import get_close_matches
 from typing import Optional
-import os
+# import os
 
 # FastAPI setup
 app = FastAPI()
@@ -26,7 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
+db_config = { 
+    'host': 'srv1836.hstgr.io',
+    'user': 'u258460312_bniuser',
+    'password':'Sbva/tech1',
+    'database': 'u258460312_bni'
+}
 
+=======
 db_config = {
     'host': os.environ.get('DB_HOST'),
     'user': os.environ.get('DB_USER'),
@@ -35,12 +43,14 @@ db_config = {
 }
 
 
+>>>>>>> caa29a39e409af362322dfe11b7f0f4c8b8bc446
 # OpenRouter / DeepSeek config
 openrouter_config = {
     'base_url': 'https://api.deepseek.com',
-    'api_key': os.environ.get('OPENROUTER_API_KEY'),
+    'api_key': 'sk-7dd2748bff6e4ffcab8a10e8133ecefc',
     'model': 'deepseek-chat'
 }
+
 
 # Init LLM
 llm = ChatOpenAI(
@@ -419,3 +429,7 @@ async def reset_user_memory(user_id: int):
         del user_memory_store[user_id]
     return {"status": "memory_reset", "user_id": user_id}
 
+# # On startup
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="127.0.0.1", port=8000)
