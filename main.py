@@ -289,6 +289,47 @@ def clean_text(text: str) -> str:
     except UnicodeDecodeError:
         return unicodedata.normalize("NFKC", text)
 
+# def generate_friendly_summary(question: str, results: list, user_id: Optional[int] = None) -> str:
+#     if not results:
+#         return "Sorry, I couldn't find any matching member based on your question."
+
+#     member_info = None
+#     if user_id:
+#         member_info = get_member_info(user_id)
+
+#     prompt = f"""
+# You are a friendly AI assistant for BNI members.
+
+# The user asked: "{question}"
+
+# Here is the data:
+# {json.dumps(results, indent=2)}
+
+# {
+#     f"Additional context: The user is {member_info['member_name']} from {member_info['company_name']}" 
+#     if member_info else ""
+# }
+
+# Explain it in a clear, simple, helpful way.
+
+# Avoid any database or SQL terms. Just answer naturally and informatively.
+
+
+# Explain it in a clear, simple, helpful way.
+# Avoid any database or SQL terms. Just answer naturally and informatively.
+# Add relevant emojis to make the response engaging and fun. 🎯📊😊
+
+# """
+#     response = llm.invoke(prompt)
+#     return clean_text(response.content.strip())
+#     # response = llm.invoke(prompt)
+#     # summary_text = clean_text(response.content.strip())
+#     # print("\n[AI general summary Generated]:\n" + "-"*60)
+#     # print(summary_text)
+#     # return summary_text
+
+
+
 def generate_friendly_summary(question: str, results: list, user_id: Optional[int] = None) -> str:
     if not results:
         return "Sorry, I couldn't find any matching member based on your question."
@@ -297,6 +338,10 @@ def generate_friendly_summary(question: str, results: list, user_id: Optional[in
     if user_id:
         member_info = get_member_info(user_id)
 
+    # Check if this is about testimonials
+    is_testimonial = any(word in question.lower() for word in 
+                        ["testimonial", "testimony", "endorsement", "recommendation"])
+    
     prompt = f"""
 You are a friendly AI assistant for BNI members.
 
@@ -305,28 +350,85 @@ The user asked: "{question}"
 Here is the data:
 {json.dumps(results, indent=2)}
 
+Important: When you see "teamname": "Team1" in the data, always refer to it as "BNI Gems" in your response.
+
 {
     f"Additional context: The user is {member_info['member_name']} from {member_info['company_name']}" 
     if member_info else ""
 }
 
 Explain it in a clear, simple, helpful way.
-
 Avoid any database or SQL terms. Just answer naturally and informatively.
-
-
-Explain it in a clear, simple, helpful way.
-Avoid any database or SQL terms. Just answer naturally and informatively.
-Add relevant emojis to make the response engaging and fun. 🎯📊😊
-
 """
+    
+    # Add special instructions for testimonials
+    if is_testimonial:
+        prompt += """
+For testimonials specifically:
+- Create a detailed, professional testimonial
+- Use a warm but professional tone
+- Structure it with proper line breaks for readability
+- Include specific details about the member's business and contributions
+- No emojis, symbols, or decorative elements like ***
+- Write in complete paragraphs
+- Make it personal and engaging but professional
+- Format it with clear paragraph separation
+"""
+    else:
+        prompt += "Add relevant emojis to make the response engaging and fun. 🎯📊😊"
+
     response = llm.invoke(prompt)
-    return clean_text(response.content.strip())
-    # response = llm.invoke(prompt)
-    # summary_text = clean_text(response.content.strip())
-    # print("\n[AI general summary Generated]:\n" + "-"*60)
-    # print(summary_text)
-    # return summary_text
+    summary_text = clean_text(response.content.strip())
+    
+    # Additional cleaning and formatting for testimonials
+    if is_testimonial:
+        # Remove *** symbols and any other unwanted decorative elements
+        summary_text = re.sub(r'\*\*\*', '', summary_text)
+        
+        # Remove other unwanted characters but keep essential punctuation
+        summary_text = re.sub(r'[^\w\s.,!?\-():]', '', summary_text)
+        
+        # Clean up any extra spaces
+        summary_text = re.sub(r'\s+', ' ', summary_text).strip()
+        
+        # Add proper line breaks for readability
+        summary_text = format_testimonial_text(summary_text)
+    
+    # Replace Team1 with BNI Gems in the final response
+    summary_text = summary_text.replace('Team1', 'BNI Gems')
+    summary_text = summary_text.replace('team1', 'BNI Gems')
+    
+    print("\n[AI summary Generated]:\n" + "-"*60)
+    print(summary_text)
+    return summary_text
+
+def format_testimonial_text(text: str) -> str:
+    # Split into sentences
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    
+    # Group sentences into paragraphs (approximately 3-4 sentences per paragraph)
+    paragraphs = []
+    current_paragraph = []
+    
+    for sentence in sentences:
+        current_paragraph.append(sentence)
+        if len(current_paragraph) >= 3 and len(sentence) > 20:  # Ensure it's a full sentence
+            paragraphs.append(" ".join(current_paragraph))
+            current_paragraph = []
+    
+    # Add any remaining sentences
+    if current_paragraph:
+        paragraphs.append(" ".join(current_paragraph))
+    
+    # Join paragraphs with double line breaks
+    formatted_text = "\n\n".join(paragraphs)
+    
+    return formatted_text
+
+
+
+
+
 
 
 
